@@ -1,23 +1,31 @@
 """
 Configuration file for MQTT to FCM Push service.
 Update these values according to your environment.
+Environment variables take precedence over default values.
 """
+import os
 
 # MQTT Configuration
-MQTT_BROKER = "localhost"
-MQTT_PORT = 1883
-MQTT_TOPIC = "notification/#"
-MQTT_USERNAME = None  # Set to your MQTT username if required
-MQTT_PASSWORD = None  # Set to your MQTT password if required
+MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
+MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
+MQTT_TOPIC = os.getenv("MQTT_TOPIC", "notification/#")
+MQTT_USERNAME = os.getenv("MQTT_USERNAME") or None
+MQTT_PASSWORD = os.getenv("MQTT_PASSWORD") or None
 
 # Firebase Configuration
-FIREBASE_CREDENTIALS = "credential.json"
+FIREBASE_CREDENTIALS = os.getenv("FIREBASE_CREDENTIALS", "credential.json")
 
 # Firestore Configuration
-USE_FIRESTORE = True  # Set to False to only use tokens from MQTT payload
-FIRESTORE_COLLECTION = "notification"
-ADMIN_ONLY = True  # Set to True to send notifications only to admin users
+# Set to False to only use tokens from MQTT payload
+USE_FIRESTORE = os.getenv("USE_FIRESTORE", "True").lower() in (
+    "true", "1", "yes"
+)
+FIRESTORE_COLLECTION = os.getenv("FIRESTORE_COLLECTION", "notification")
+# Set to True to send notifications only to admin users
+ADMIN_ONLY = os.getenv("ADMIN_ONLY", "True").lower() in (
+    "true", "1", "yes"
+)
 
 # Notification Configuration
-DEFAULT_PRIORITY = "high"  # "high" or "normal"
-DEFAULT_TTL = 43200  # Time-to-live in seconds (12 hours)
+DEFAULT_PRIORITY = os.getenv("DEFAULT_PRIORITY", "high")
+DEFAULT_TTL = int(os.getenv("DEFAULT_TTL", "43200"))

@@ -53,7 +53,90 @@ ADMIN_ONLY = False  # Send only to admin users
 
 ## Usage
 
-### Running the Service
+### Running with Docker (Recommended)
+
+#### Quick Start
+
+1. Copy the example environment file:
+```bash
+cp .env.example .env
+```
+
+2. Edit `.env` with your configuration:
+```bash
+# Update MQTT broker settings
+MQTT_BROKER=your-mqtt-broker.com
+MQTT_PORT=1883
+MQTT_USERNAME=your-username
+MQTT_PASSWORD=your-password
+
+# Ensure credential.json is in the project directory
+```
+
+3. Build and run with Docker Compose:
+```bash
+docker-compose up -d
+```
+
+4. View logs:
+```bash
+docker-compose logs -f mqtt2fcm
+```
+
+5. Stop the service:
+```bash
+docker-compose down
+```
+
+#### Using Docker Directly
+
+Build the image:
+```bash
+docker build -t mqtt2fcm-push .
+```
+
+Run the container:
+```bash
+docker run -d \
+  --name mqtt2fcm \
+  -e MQTT_BROKER=your-mqtt-broker.com \
+  -e MQTT_PORT=1883 \
+  -e MQTT_USERNAME=your-username \
+  -e MQTT_PASSWORD=your-password \
+  -v $(pwd)/credential.json:/app/credential.json:ro \
+  mqtt2fcm-push
+```
+
+#### Connecting to Local MQTT Broker
+
+If your MQTT broker runs on the host machine, use:
+
+**Option 1: Host network (Linux only)**
+```bash
+docker run -d \
+  --name mqtt2fcm \
+  --network host \
+  -v $(pwd)/credential.json:/app/credential.json:ro \
+  mqtt2fcm-push
+```
+
+**Option 2: Use host.docker.internal (Mac/Windows)**
+```bash
+docker run -d \
+  --name mqtt2fcm \
+  -e MQTT_BROKER=host.docker.internal \
+  -v $(pwd)/credential.json:/app/credential.json:ro \
+  mqtt2fcm-push
+```
+
+Or update your `.env` file:
+```bash
+MQTT_BROKER=host.docker.internal
+```
+
+### Running Locally (Without Docker)
+
+#### Running the Service
 
 Start the service using:
 

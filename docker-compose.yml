@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  mqtt2fcm:
+    build: .
+    container_name: mqtt2fcm-push
+    restart: unless-stopped
+    environment:
+      # MQTT Configuration
+      - MQTT_BROKER=${MQTT_BROKER:-localhost}
+      - MQTT_PORT=${MQTT_PORT:-1883}
+      - MQTT_TOPIC=${MQTT_TOPIC:-notification/#}
+      - MQTT_USERNAME=${MQTT_USERNAME:-}
+      - MQTT_PASSWORD=${MQTT_PASSWORD:-}
+      
+      # Firebase Configuration
+      - FIREBASE_CREDENTIALS=${FIREBASE_CREDENTIALS:-credential.json}
+      
+      # Firestore Configuration
+      - USE_FIRESTORE=${USE_FIRESTORE:-True}
+      - FIRESTORE_COLLECTION=${FIRESTORE_COLLECTION:-notification}
+      - ADMIN_ONLY=${ADMIN_ONLY:-True}
+      
+      # Notification Configuration
+      - DEFAULT_PRIORITY=${DEFAULT_PRIORITY:-high}
+      - DEFAULT_TTL=${DEFAULT_TTL:-43200}
+    
+    volumes:
+      # Mount credential file if you prefer to keep it outside the image
+      - ./credential.json:/app/credential.json:ro
+    
+    # Uncomment if you need to connect to a local MQTT broker on host
+    # network_mode: host
+    
+    # Or use this for custom network
+    networks:
+      - mqtt2fcm-network
+
+networks:
+  mqtt2fcm-network:
+    driver: bridge
