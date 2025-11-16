@@ -18,7 +18,9 @@ def main():
         'mqtt_password': config.MQTT_PASSWORD,
         'firebase_credentials': config.FIREBASE_CREDENTIALS,
         'firestore_collection': config.FIRESTORE_COLLECTION,
-        'admin_only': config.ADMIN_ONLY
+        'admin_only': config.ADMIN_ONLY,
+        'retry_interval': config.RETRY_INTERVAL,
+        'max_retries': config.MAX_RETRIES
     }
     
     try:

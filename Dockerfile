@@ -16,7 +16,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
 COPY *.py ./
-COPY credential.json ./
+COPY entrypoint.sh ./
+
+# Note: credential.json should be mounted as a volume at runtime
+# See docker-compose.yml for volume configuration
+
+# Make entrypoint executable
+RUN chmod +x entrypoint.sh
 
 # Create a non-root user to run the application
 RUN useradd -m -u 1000 appuser && \
@@ -26,4 +32,4 @@ RUN useradd -m -u 1000 appuser && \
 USER appuser
 
 # Run the application
-CMD ["python", "main.py"]
+CMD ["./entrypoint.sh"]

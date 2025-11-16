@@ -37,3 +37,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Queue persistence
+notification_queue.json

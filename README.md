@@ -9,6 +9,8 @@ A Python service that connects to an MQTT broker and sends Firebase Cloud Messag
 - 🔥 Retrieve FCM tokens from Firestore or MQTT payload
 - 👥 Support for admin-only notifications
 - 🔄 Automatic removal of invalid FCM tokens
+- 🔁 **Automatic retry with TTL management** - Failed notifications are queued and retried
+- 💾 **Persistent queue** - Notifications survive service restarts
 - 📝 Comprehensive logging
 - ⚙️ Configurable notification priority and TTL
 
@@ -32,7 +34,7 @@ pip install -r requirements.txt
 
 ## Configuration
 
-Edit `config.py` to configure the service:
+Edit `config.py` or set environment variables to configure the service:
 
 ```python
 # MQTT Configuration
@@ -49,7 +51,25 @@ FIREBASE_CREDENTIALS = "path/to/firebase-credentials.json"
 USE_FIRESTORE = True  # Use Firestore for token management
 FIRESTORE_COLLECTION = "notification"
 ADMIN_ONLY = False  # Send only to admin users
+
+# Retry Configuration
+RETRY_INTERVAL = 60  # Seconds between retry attempts
+MAX_RETRIES = 10     # Maximum retry attempts before discarding
 ```
+
+### Retry and Queue Management
+
+The service automatically queues failed notifications and retries them:
+
+- **Automatic Retry**: Failed notifications are queued and retried every 60 seconds (configurable)
+- **TTL Management**: Notifications expire based on their TTL setting (default: 12 hours)
+- **Persistent Queue**: Queue survives service restarts via `notification_queue.json`
+- **Max Retries**: After 10 failed attempts (configurable), notifications are discarded
+- **Failure Scenarios**: Queues notifications when:
+  - FCM service is unreachable
+  - Firestore is unavailable
+  - Network connection is down
+  - Any send error occurs
 
 ## Usage
 
@@ -75,17 +95,17 @@ MQTT_PASSWORD=your-password
 
 3. Build and run with Docker Compose:
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 4. View logs:
 ```bash
-docker-compose logs -f mqtt2fcm
+docker compose logs -f mqtt2fcm
 ```
 
 5. Stop the service:
 ```bash
-docker-compose down
+docker compose down
 ```
 
 #### Using Docker Directly

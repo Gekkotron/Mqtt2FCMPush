@@ -24,18 +24,20 @@ services:
       # Notification Configuration
       - DEFAULT_PRIORITY=${DEFAULT_PRIORITY:-high}
       - DEFAULT_TTL=${DEFAULT_TTL:-43200}
+      
+      # Retry Configuration
+      - RETRY_INTERVAL=${RETRY_INTERVAL:-60}
+      - MAX_RETRIES=${MAX_RETRIES:-10}
     
     volumes:
       # Mount credential file if you prefer to keep it outside the image
       - ./credential.json:/app/credential.json:ro
+      # Persist notification queue across restarts
+      - ./notification_queue.json:/app/notification_queue.json
     
-    # Uncomment if you need to connect to a local MQTT broker on host
-    # network_mode: host
-    
-    # Or use this for custom network
     networks:
-      - mqtt2fcm-network
+      - home-automation_homeautomation
 
 networks:
-  mqtt2fcm-network:
-    driver: bridge
+  home-automation_homeautomation:
+    external: true

@@ -29,3 +29,7 @@ ADMIN_ONLY = os.getenv("ADMIN_ONLY", "True").lower() in (
 # Notification Configuration
 DEFAULT_PRIORITY = os.getenv("DEFAULT_PRIORITY", "high")
 DEFAULT_TTL = int(os.getenv("DEFAULT_TTL", "43200"))
+
+# Retry Configuration
+RETRY_INTERVAL = int(os.getenv("RETRY_INTERVAL", "60"))
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "10"))

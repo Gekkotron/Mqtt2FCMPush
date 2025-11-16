@@ -9,6 +9,7 @@ from typing import Dict, Any
 from firebase_manager import FirebaseManager
 from fcm_sender import FCMSender
 from mqtt_handler import MQTTHandler
+from notification_queue import NotificationQueue
 
 
 class Mqtt2FCMPush:
@@ -35,6 +36,11 @@ class Mqtt2FCMPush:
         # Initialize components
         self.firebase_manager = FirebaseManager(self.config, self.logger)
         self.fcm_sender = FCMSender(self.logger)
+        self.notification_queue = NotificationQueue(
+            logger=self.logger,
+            retry_interval=config.get('retry_interval', 60),
+            max_retries=config.get('max_retries', 10)
+        )
         self.mqtt_handler = MQTTHandler(
             self.config,
             self.logger,
@@ -73,26 +79,53 @@ class Mqtt2FCMPush:
             )
             return
         
-        # Extract notification parameters
-        title = payload.get('title', 'Notification')
-        body = payload.get('body', '')
-        data = payload.get('data', {})
-        priority = payload.get('priority', 'high')
-        ttl = payload.get('ttl', 43200)
+        # Create complete notification payload
+        notification = {
+            'tokens': tokens,
+            'title': payload.get('title', 'Notification'),
+            'body': payload.get('body', ''),
+            'data': payload.get('data', {}),
+            'priority': payload.get('priority', 'high'),
+            'ttl': payload.get('ttl', 43200)
+        }
         
-        # Send notification
-        failed_tokens = self.fcm_sender.send_notification(
-            tokens=tokens,
-            title=title,
-            body=body,
-            data=data,
-            priority=priority,
-            ttl=ttl
-        )
+        # Try to send notification
+        success = self._send_notification(notification)
         
-        # Remove failed tokens from Firestore
-        if failed_tokens:
-            self.firebase_manager.remove_failed_tokens(failed_tokens)
+        # Queue for retry if failed
+        if not success:
+            self.notification_queue.add_notification(notification)
+    
+    def _send_notification(self, notification: Dict[str, Any]) -> bool:
+        """
+        Send FCM notification.
+        
+        Args:
+            notification: Complete notification payload
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            failed_tokens = self.fcm_sender.send_notification(
+                tokens=notification['tokens'],
+                title=notification['title'],
+                body=notification['body'],
+                data=notification['data'],
+                priority=notification['priority'],
+                ttl=notification['ttl']
+            )
+            
+            # Remove failed tokens from Firestore
+            if failed_tokens:
+                self.firebase_manager.remove_failed_tokens(failed_tokens)
+            
+            # Consider it success if at least some tokens succeeded
+            return len(failed_tokens) < len(notification['tokens'])
+            
+        except Exception as e:
+            self.logger.error("Error sending notification: %s", e)
+            return False
     
     def send_fcm_notification(self, payload: Dict[str, Any]):
         """
@@ -113,6 +146,12 @@ class Mqtt2FCMPush:
         """Start the MQTT to FCM Push service."""
         try:
             self.logger.info("Starting MQTT to FCM Push service...")
+            
+            # Start retry worker
+            self.notification_queue.start_retry_worker(
+                self._send_notification
+            )
+            
             self.mqtt_handler.connect()
             self.mqtt_handler.start_loop()
         except KeyboardInterrupt:
@@ -124,5 +163,15 @@ class Mqtt2FCMPush:
     
     def stop(self):
         """Stop the service and disconnect."""
+        self.notification_queue.stop_retry_worker()
         self.mqtt_handler.disconnect()
+    
+    def get_queue_status(self) -> Dict[str, Any]:
+        """
+        Get notification queue status.
+        
+        Returns:
+            Dictionary with queue statistics
+        """
+        return self.notification_queue.get_queue_status()
 
