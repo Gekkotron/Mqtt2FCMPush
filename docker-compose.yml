@@ -5,6 +5,10 @@ services:
     build: .
     container_name: mqtt2fcm-push
     restart: unless-stopped
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+      - 1.1.1.1
     environment:
       # MQTT Configuration
       - MQTT_BROKER=${MQTT_BROKER:-localhost}
