@@ -4,6 +4,9 @@ MQTT client handler.
 """
 import json
 import logging
+import threading
+import time
+from datetime import datetime
 from typing import Dict, Any, Callable
 import paho.mqtt.client as mqtt
 
@@ -29,6 +32,8 @@ class MQTTHandler:
         self.logger = logger
         self.message_callback = message_callback
         self.client = None
+        self.heartbeat_thread = None
+        self.heartbeat_stop_event = threading.Event()
         
         self._init_mqtt()
     
@@ -60,6 +65,10 @@ class MQTTHandler:
             topic = self.config.get('mqtt_topic', 'notifications/#')
             client.subscribe(topic)
             self.logger.info("Subscribed to topic: %s", topic)
+            
+            # Start heartbeat if enabled
+            if self.config.get('heartbeat_enabled', True):
+                self._start_heartbeat()
         else:
             self.logger.error(
                 "Failed to connect to MQTT broker. Return code: %s", rc
@@ -67,6 +76,9 @@ class MQTTHandler:
     
     def _on_disconnect(self, client, userdata, rc):
         """Callback for when the client disconnects from the broker."""
+        # Stop heartbeat on disconnect
+        self._stop_heartbeat()
+        
         if rc != 0:
             self.logger.warning(
                 "Unexpected disconnection from MQTT broker. "
@@ -115,8 +127,68 @@ class MQTTHandler:
         """Start the MQTT client loop (blocking)."""
         self.client.loop_forever()
     
+    def _heartbeat_worker(self):
+        """Background worker that publishes periodic heartbeats."""
+        heartbeat_topic = self.config.get('heartbeat_topic', 'notification/heartbeat')
+        interval = self.config.get('heartbeat_interval', 60)
+        
+        self.logger.info(
+            "Heartbeat started: topic=%s, interval=%ds",
+            heartbeat_topic,
+            interval
+        )
+        
+        while not self.heartbeat_stop_event.wait(timeout=interval):
+            try:
+                # Only publish if connected
+                if not self.is_connected or not self.client:
+                    self.logger.debug("Skipping heartbeat - not connected")
+                    continue
+                
+                heartbeat_payload = {
+                    'timestamp': datetime.now(),
+                }
+                
+                result = self.client.publish(
+                    heartbeat_topic,
+                    json.dumps(heartbeat_payload),
+                    qos=1,
+                    retain=True
+                )
+                
+                # Wait for publish to complete
+                result.wait_for_publish(timeout=5)
+                
+                if result.rc == mqtt.MQTT_ERR_SUCCESS:
+                    self.logger.info("Heartbeat sent to %s", heartbeat_topic)
+                else:
+                    self.logger.warning("Heartbeat publish failed with rc=%s", result.rc)
+                
+            except Exception as e:
+                self.logger.error("Error sending heartbeat: %s", e)
+    
+    def _start_heartbeat(self):
+        """Start the heartbeat thread."""
+        if self.heartbeat_thread and self.heartbeat_thread.is_alive():
+            return
+        
+        self.heartbeat_stop_event.clear()
+        self.heartbeat_thread = threading.Thread(
+            target=self._heartbeat_worker,
+            daemon=True
+        )
+        self.heartbeat_thread.start()
+    
+    def _stop_heartbeat(self):
+        """Stop the heartbeat thread."""
+        if self.heartbeat_thread and self.heartbeat_thread.is_alive():
+            self.logger.info("Stopping heartbeat...")
+            self.heartbeat_stop_event.set()
+            self.heartbeat_thread.join(timeout=5)
+    
     def disconnect(self):
         """Disconnect from MQTT broker."""
+        self._stop_heartbeat()
         if self.client:
             self.client.disconnect()
             self.logger.info("MQTT client disconnected")

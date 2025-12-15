@@ -32,6 +32,11 @@ services:
       # Retry Configuration
       - RETRY_INTERVAL=${RETRY_INTERVAL:-60}
       - MAX_RETRIES=${MAX_RETRIES:-10}
+      
+      # Heartbeat Configuration
+      - HEARTBEAT_ENABLED=${HEARTBEAT_ENABLED:-True}
+      - HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-60}
+      - HEARTBEAT_TOPIC=${HEARTBEAT_TOPIC:-notification/heartbeat}
     
     volumes:
       # Mount credential file if you prefer to keep it outside the image

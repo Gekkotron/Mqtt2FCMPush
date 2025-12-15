@@ -20,7 +20,10 @@ def main():
         'firestore_collection': config.FIRESTORE_COLLECTION,
         'admin_only': config.ADMIN_ONLY,
         'retry_interval': config.RETRY_INTERVAL,
-        'max_retries': config.MAX_RETRIES
+        'max_retries': config.MAX_RETRIES,
+        'heartbeat_enabled': config.HEARTBEAT_ENABLED,
+        'heartbeat_interval': config.HEARTBEAT_INTERVAL,
+        'heartbeat_topic': config.HEARTBEAT_TOPIC
     }
     
     try:
