@@ -8,7 +8,7 @@ import os
 # MQTT Configuration
 MQTT_BROKER = os.getenv("MQTT_BROKER", "localhost")
 MQTT_PORT = int(os.getenv("MQTT_PORT", "1883"))
-MQTT_TOPIC = os.getenv("MQTT_TOPIC", "notification/#")
+MQTT_TOPIC = os.getenv("MQTT_TOPIC", "fcm-push/notification/#")
 MQTT_USERNAME = os.getenv("MQTT_USERNAME") or None
 MQTT_PASSWORD = os.getenv("MQTT_PASSWORD") or None
 
@@ -39,7 +39,7 @@ HEARTBEAT_ENABLED = os.getenv("HEARTBEAT_ENABLED", "True").lower() in (
     "true", "1", "yes"
 )
 HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", "60"))
-HEARTBEAT_TOPIC = os.getenv("HEARTBEAT_TOPIC", "notification/heartbeat")
+HEARTBEAT_TOPIC = os.getenv("HEARTBEAT_TOPIC", "fcm-push/heartbeat")
 
 # Reconnect Configuration
 AUTO_RECONNECT = os.getenv("AUTO_RECONNECT", "True").lower() in (

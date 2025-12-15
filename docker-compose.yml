@@ -13,7 +13,7 @@ services:
       # MQTT Configuration
       - MQTT_BROKER=${MQTT_BROKER:-localhost}
       - MQTT_PORT=${MQTT_PORT:-1883}
-      - MQTT_TOPIC=${MQTT_TOPIC:-notification/#}
+      - MQTT_TOPIC=${MQTT_TOPIC:-fcm-push/notification/#}
       - MQTT_USERNAME=${MQTT_USERNAME:-}
       - MQTT_PASSWORD=${MQTT_PASSWORD:-}
       
@@ -36,7 +36,7 @@ services:
       # Heartbeat Configuration
       - HEARTBEAT_ENABLED=${HEARTBEAT_ENABLED:-True}
       - HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-60}
-      - HEARTBEAT_TOPIC=${HEARTBEAT_TOPIC:-notification/heartbeat}
+      - HEARTBEAT_TOPIC=${HEARTBEAT_TOPIC:-fcm-push/heartbeat}
       
       # Reconnect Configuration
       - AUTO_RECONNECT=${AUTO_RECONNECT:-True}

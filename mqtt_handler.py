@@ -68,7 +68,7 @@ class MQTTHandler:
             self.is_connected = True
             self.reconnect_delay = self.config.get('reconnect_delay_min', 1)
             
-            topic = self.config.get('mqtt_topic', 'notifications/#')
+            topic = self.config.get('mqtt_topic', 'fcm-push/notifications/#')
             client.subscribe(topic)
             self.logger.info("Subscribed to topic: %s", topic)
             
@@ -155,7 +155,7 @@ class MQTTHandler:
     
     def _heartbeat_worker(self):
         """Background worker that publishes periodic heartbeats."""
-        heartbeat_topic = self.config.get('heartbeat_topic', 'notification/heartbeat')
+        heartbeat_topic = self.config.get('heartbeat_topic', 'fcm-push/heartbeat')
         interval = self.config.get('heartbeat_interval', 60)
         
         self.logger.info(
@@ -171,9 +171,7 @@ class MQTTHandler:
                     self.logger.debug("Skipping heartbeat - not connected")
                     continue
                 
-                heartbeat_payload = {
-                    'timestamp': datetime.now(),
-                }
+                heartbeat_payload = {"timestamp": int(time.time())}
                 
                 result = self.client.publish(
                     heartbeat_topic,

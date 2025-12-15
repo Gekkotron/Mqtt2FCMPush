@@ -156,9 +156,9 @@ class FirebaseManager:
                     )
                     
                     # Uncomment to actually remove tokens
-                    # doc.reference.update({
-                    #     'tokens': firestore.ArrayRemove(removable_tokens)
-                    # })
+                    doc.reference.update({
+                        'tokens': firestore.ArrayRemove(removable_tokens)
+                 })
                     
         except Exception as e:
             self.logger.error(
