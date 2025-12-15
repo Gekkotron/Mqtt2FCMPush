@@ -37,6 +37,11 @@ services:
       - HEARTBEAT_ENABLED=${HEARTBEAT_ENABLED:-True}
       - HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-60}
       - HEARTBEAT_TOPIC=${HEARTBEAT_TOPIC:-notification/heartbeat}
+      
+      # Reconnect Configuration
+      - AUTO_RECONNECT=${AUTO_RECONNECT:-True}
+      - RECONNECT_DELAY_MIN=${RECONNECT_DELAY_MIN:-1}
+      - RECONNECT_DELAY_MAX=${RECONNECT_DELAY_MAX:-60}
     
     volumes:
       # Mount credential file if you prefer to keep it outside the image

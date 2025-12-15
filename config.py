@@ -40,3 +40,10 @@ HEARTBEAT_ENABLED = os.getenv("HEARTBEAT_ENABLED", "True").lower() in (
 )
 HEARTBEAT_INTERVAL = int(os.getenv("HEARTBEAT_INTERVAL", "60"))
 HEARTBEAT_TOPIC = os.getenv("HEARTBEAT_TOPIC", "notification/heartbeat")
+
+# Reconnect Configuration
+AUTO_RECONNECT = os.getenv("AUTO_RECONNECT", "True").lower() in (
+    "true", "1", "yes"
+)
+RECONNECT_DELAY_MIN = int(os.getenv("RECONNECT_DELAY_MIN", "1"))
+RECONNECT_DELAY_MAX = int(os.getenv("RECONNECT_DELAY_MAX", "60"))

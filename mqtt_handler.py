@@ -34,6 +34,9 @@ class MQTTHandler:
         self.client = None
         self.heartbeat_thread = None
         self.heartbeat_stop_event = threading.Event()
+        self.reconnect_delay = config.get('reconnect_delay_min', 1)
+        self.reconnect_delay_max = config.get('reconnect_delay_max', 60)
+        self.is_connected = False
         
         self._init_mqtt()
     
@@ -62,6 +65,9 @@ class MQTTHandler:
         """Callback for when the client connects to the broker."""
         if rc == 0:
             self.logger.info("Connected to MQTT broker successfully")
+            self.is_connected = True
+            self.reconnect_delay = self.config.get('reconnect_delay_min', 1)
+            
             topic = self.config.get('mqtt_topic', 'notifications/#')
             client.subscribe(topic)
             self.logger.info("Subscribed to topic: %s", topic)
@@ -73,16 +79,19 @@ class MQTTHandler:
             self.logger.error(
                 "Failed to connect to MQTT broker. Return code: %s", rc
             )
+            self.is_connected = False
     
     def _on_disconnect(self, client, userdata, rc):
         """Callback for when the client disconnects from the broker."""
+        self.is_connected = False
+        
         # Stop heartbeat on disconnect
         self._stop_heartbeat()
         
         if rc != 0:
             self.logger.warning(
                 "Unexpected disconnection from MQTT broker. "
-                "Return code: %s",
+                "Return code: %s. Will auto-reconnect.",
                 rc
             )
         else:
@@ -106,26 +115,43 @@ class MQTTHandler:
             self.logger.error("Error processing message: %s", e)
     
     def connect(self):
-        """Connect to MQTT broker."""
-        try:
-            broker = self.config.get('mqtt_broker')
-            port = self.config.get('mqtt_port', 1883)
-            
-            if not broker:
-                raise ValueError("mqtt_broker is required in config")
-            
-            self.logger.info(
-                "Connecting to MQTT broker at %s:%d", broker, port
-            )
-            self.client.connect(broker, port, 60)
-            
-        except Exception as e:
-            self.logger.error("Failed to connect to MQTT broker: %s", e)
-            raise
+        """Connect to MQTT broker with retry logic."""
+        broker = self.config.get('mqtt_broker')
+        port = self.config.get('mqtt_port', 1883)
+        auto_reconnect = self.config.get('auto_reconnect', True)
+        
+        if not broker:
+            raise ValueError("mqtt_broker is required in config")
+        
+        while True:
+            try:
+                self.logger.info(
+                    "Connecting to MQTT broker at %s:%d", broker, port
+                )
+                self.client.connect(broker, port, 60)
+                break
+                
+            except Exception as e:
+                if not auto_reconnect:
+                    self.logger.error("Failed to connect to MQTT broker: %s", e)
+                    raise
+                
+                self.logger.error(
+                    "Failed to connect to MQTT broker: %s. "
+                    "Retrying in %d seconds...",
+                    e, self.reconnect_delay
+                )
+                time.sleep(self.reconnect_delay)
+                
+                # Exponential backoff
+                self.reconnect_delay = min(
+                    self.reconnect_delay * 2,
+                    self.reconnect_delay_max
+                )
     
     def start_loop(self):
-        """Start the MQTT client loop (blocking)."""
-        self.client.loop_forever()
+        """Start the MQTT client loop (blocking) with auto-reconnect."""
+        self.client.loop_forever(retry_first_connection=True)
     
     def _heartbeat_worker(self):
         """Background worker that publishes periodic heartbeats."""

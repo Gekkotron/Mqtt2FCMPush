@@ -3,6 +3,8 @@
 Main entry point for MQTT to FCM Push service.
 """
 import sys
+import time
+import logging
 import config
 from mqtt_fcm_service import Mqtt2FCMPush
 
@@ -23,7 +25,10 @@ def main():
         'max_retries': config.MAX_RETRIES,
         'heartbeat_enabled': config.HEARTBEAT_ENABLED,
         'heartbeat_interval': config.HEARTBEAT_INTERVAL,
-        'heartbeat_topic': config.HEARTBEAT_TOPIC
+        'heartbeat_topic': config.HEARTBEAT_TOPIC,
+        'auto_reconnect': config.AUTO_RECONNECT,
+        'reconnect_delay_min': config.RECONNECT_DELAY_MIN,
+        'reconnect_delay_max': config.RECONNECT_DELAY_MAX
     }
     
     try:
